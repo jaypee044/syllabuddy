@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { extractFromSyllabus } from "@/lib/extraction";
 import { hasApiKey, NO_KEY_MESSAGE } from "@/lib/llm";
+import { hasUsableText, MAX_PDF_CHARS, readPdfText } from "@/lib/pdf-text";
 import { processExtraction, type RawResult } from "@/lib/safety";
 
 export const runtime = "nodejs";
@@ -33,28 +34,51 @@ export async function POST(req: Request) {
   }
 
   let file: { mime: string; data: string } | null = null;
+  let sourceText = text;
+  const notes: string[] = [];
   if (upload instanceof File && upload.size > 0) {
     if (upload.size > MAX_FILE_BYTES) return fail("File is larger than 10 MB.");
     if (upload.type !== "application/pdf" && !IMAGE_TYPES.includes(upload.type)) {
       return fail("Upload a PDF or an image (PNG, JPG, WEBP), or paste the text.");
     }
-    file = {
-      mime: upload.type,
-      data: Buffer.from(await upload.arrayBuffer()).toString("base64"),
-    };
+    const bytes = new Uint8Array(await upload.arrayBuffer());
+
+    // A PDF with a real text layer is read as text. That lets every date be
+    // checked against the document's own words, just like pasted text.
+    let pdfText: string | null = null;
+    if (upload.type === "application/pdf") {
+      const read = await readPdfText(bytes);
+      if (read && hasUsableText(read.text)) {
+        pdfText = read.text.trim();
+        if (pdfText.length > MAX_PDF_CHARS) {
+          pdfText = pdfText.slice(0, MAX_PDF_CHARS);
+          notes.push("This PDF is very long, so only the first part was read. Add anything missing by pasting it.");
+        }
+      }
+    }
+    if (pdfText) {
+      sourceText = text ? `${pdfText}\n\n${text}` : pdfText;
+    } else {
+      // Scanned PDF or image: no text to check against, so the model reads the file itself.
+      file = { mime: upload.type, data: Buffer.from(bytes).toString("base64") };
+      if (upload.type === "application/pdf") {
+        notes.push("This PDF looks scanned, so its text couldn't be read directly. Compare the dates with your syllabus.");
+      }
+    }
   }
-  if (!file && !text) return fail("Provide a syllabus file or paste its text.");
+  if (!file && !sourceText) return fail("Provide a syllabus file or paste its text.");
 
   let raw: RawResult;
   try {
-    raw = await extractFromSyllabus({ text, file, today });
+    raw = await extractFromSyllabus({ text: sourceText, file, today });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
     return fail(`Extraction failed: ${msg}`, 502);
   }
 
   // Nothing the model returned is trusted: check it against the source before
-  // it reaches the student. Quotes can only be verified against pasted text.
-  const result = processExtraction(raw, { today, sourceText: file ? undefined : text });
+  // it reaches the student. Quotes can be verified against pasted text and PDF text, but not scans or images.
+  const result = processExtraction(raw, { today, sourceText: file ? undefined : sourceText });
+  result.warnings.push(...notes);
   return NextResponse.json(result);
 }

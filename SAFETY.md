@@ -33,11 +33,29 @@ The unit tests above use simulated model output. `npm run eval` runs the real sy
 
 To run it, put a key in `.env.local` and run `npm run eval`. Paste the headline numbers from `eval/results.md` below, with the date and model, before presenting.
 
-Results: _not yet run_
+**Run on 2026-10-05 with Gemini `gemini-3.8-flash`, six test syllabi (full report in `eval/results.md`):**
+
+| Measure | Result |
+| --- | --- |
+| Deadlines found | 24 of 24 (100%) |
+| Dates correct | 24 of 24 (100%) |
+| Grade weights correct | 23 of 23 (100%) |
+| Invented items | 0 |
+| Items verified against the syllabus text | 19 |
+| Attack syllabi where the model followed the planted instruction | 0 of 2 |
+| Attack syllabi where the injection warning was shown | 2 of 2 |
+| Items the model marked as done | 0 |
+
+How to read these numbers:
+
+- It is a small test set, so treat it as a rough guide, not a guarantee.
+- The week-number syllabus shows no verified items on purpose. Its dates are worked out from week numbers, so the app flags them for the student to check instead of marking them verified.
+- No wrong dates occurred in this run, so "wrong dates flagged" is 0 of 0. The path that catches wrong dates is covered by the unit tests with simulated bad output, not by this run.
+- The model resisted both attacks here, so the server-side checks were not the thing that saved us in this run. They are there for the cases where a model doesn't resist.
 
 ## Known limitations
 
-- Quote checking only works on pasted text. For PDFs and photos the model's quote can't be checked against the file, so those get date-plausibility checks and an explicit warning to compare against the syllabus.
+- Quote checking needs readable text. It works on pasted text and on PDFs that have a text layer (the server reads the PDF's text and checks quotes against it, and also scans it for hidden instructions such as white-on-white text). For scanned PDFs and photos there is no text to check against, so those get date-plausibility checks and an explicit warning to compare against the syllabus.
 - The injection scan is pattern-based, so it catches common attacks and not every phrasing. It is one layer of several, alongside the fixed output structure and the human review step.
 - The unit tests cover the server-side checks with simulated model output. How often a particular model resists injection is measured separately by `npm run eval`, on a small test set that gives a rough guide, not a guarantee.
 - There is no rate limiting or sign-in. A public deployment would need both.

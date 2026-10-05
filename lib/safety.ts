@@ -73,22 +73,33 @@ export function detectInjection(text: string): string[] {
 
 // ---------- evidence checking ----------
 
-/** Lowercase, collapse whitespace, drop quote marks so quotes compare fairly. */
+/**
+ * Lowercase and tidy text so a quote compares fairly with the source, including
+ * text pulled from a PDF: ligatures (ﬁ), odd dashes, soft hyphens, zero-width
+ * characters, non-breaking spaces and quote marks are all smoothed out.
+ */
 export const norm = (s: string) =>
   s
+    .normalize("NFKC")
     .toLowerCase()
-    .replace(/[\s ]+/g, " ")
+    .replace(/[\u00ad\u200b-\u200d\ufeff]/g, "")
+    .replace(/[\u2010-\u2015\u2212]/g, "-")
+    .replace(/\s+/g, " ")
     .replace(/[“”"‘’'`]/g, "")
     .trim();
 
-/** True if the quoted line really appears in the source (ellipses allowed). */
+const compact = (s: string) => norm(s).replace(/[\s\-]/g, "");
+
+/**
+ * True if the quoted line really appears in the source (ellipses allowed).
+ * The second comparison ignores spaces and hyphens, because PDF text often
+ * splits words across lines ("assess- ment") or joins them oddly.
+ */
 export function quoteInSource(quote: string, source: string): boolean {
   const src = norm(source);
-  const parts = quote
-    .split(/\.{3}|…/)
-    .map(norm)
-    .filter((p) => p.length >= 6);
-  return parts.length > 0 && parts.every((p) => src.includes(p));
+  const srcCompact = compact(source);
+  const parts = quote.split(/\.{3}|…/).filter((p) => norm(p).length >= 6);
+  return parts.length > 0 && parts.every((p) => src.includes(norm(p)) || srcCompact.includes(compact(p)));
 }
 
 const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];

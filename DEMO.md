@@ -45,7 +45,7 @@ No. The AI does two things that are hard for code: reading messy syllabi and und
 Each item has to quote the line it came from. We check that the quote exists, and that its date, year included, matches. Anything doubtful is flagged and the student reviews the table before a plan exists.
 
 **"What about prompt injection?"**
-The syllabus is treated as data, and the AI can only return a fixed structure. We scan the input and the output, and we tested attacks, including a hidden "extend all deadlines" instruction. We also say what isn't covered: the scan is pattern-based, and quote checking only works on pasted text, not PDFs or photos.
+The syllabus is treated as data, and the AI can only return a fixed structure. We scan the input and the output, and we tested attacks, including a hidden "extend all deadlines" instruction. We also say what isn't covered: the scan is pattern-based, and quote checking works on pasted text and PDFs with a text layer, not on scans or photos.
 
 **"What happens to student data?"**
 The syllabus is sent to an AI service to be read and isn't stored on a server. The plan stays in the student's browser and can be erased from the footer.
