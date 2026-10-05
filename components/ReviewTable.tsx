@@ -35,12 +35,12 @@ export default function ReviewTable({ items, colors, onChange }: Props) {
     <div className="card">
       {v.read > 0 && (
         <div className="pills" aria-label="Verification summary">
-          <span className="pill">{v.read} read by the AI</span>
-          {v.verified > 0 && <span className="pill ok">{v.verified} verified against your syllabus text</span>}
-          {v.confirmed > 0 && <span className="pill ok">{v.confirmed} confirmed by you</span>}
+          <span className="pill">{v.read} read by AI</span>
+          {v.verified > 0 && <span className="pill ok">{v.verified} verified</span>}
+          {v.confirmed > 0 && <span className="pill ok">{v.confirmed} confirmed</span>}
           {v.toCheck > 0 && <span className="pill bad">{v.toCheck} to check</span>}
           {v.notCheckable > 0 && (
-            <span className="pill">{v.notCheckable} read from a file, can't be checked automatically</span>
+            <span className="pill">{v.notCheckable} can't be auto-checked</span>
           )}
         </div>
       )}

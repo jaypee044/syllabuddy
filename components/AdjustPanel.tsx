@@ -65,7 +65,7 @@ export default function AdjustPanel({ items, availability, onApply, onRemoveAvai
     <div className="card adjust">
       <h3>Something changed?</h3>
       <p className="hint-line">
-        Tell the planner in your own words. Syllabuddy suggests changes and nothing happens until you approve them.
+        Say what changed. Nothing is applied until you approve it.
       </p>
 
       <div className="adjust-row">
@@ -73,7 +73,7 @@ export default function AdjustPanel({ items, availability, onApply, onRemoveAvai
           aria-label="What changed"
           rows={2}
           maxLength={500}
-          placeholder="e.g. I'm away 17 to 20 October, or the Econ essay is now due 6 November"
+          placeholder="e.g. I'm sick from Thursday to Sunday"
           value={text}
           onChange={(e) => setText(e.target.value)}
         />

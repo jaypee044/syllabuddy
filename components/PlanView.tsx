@@ -22,6 +22,17 @@ interface Props {
   skipped: number;
 }
 
+/** One chip per item per day: merge work and revision blocks for the same item. */
+function groupBlocks(blocks: Plan["blocks"]) {
+  const out: Plan["blocks"] = [];
+  for (const b of blocks) {
+    const hit = out.find((x) => x.itemId === b.itemId);
+    if (hit) hit.hours = Math.round((hit.hours + b.hours) * 10) / 10;
+    else out.push({ ...b });
+  }
+  return out;
+}
+
 export default function PlanView({ plan, items, colors, settings, onSettings, skipped }: Props) {
   const [picked, setPicked] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -125,14 +136,13 @@ export default function PlanView({ plan, items, colors, settings, onSettings, sk
       ) : (
         <>
           <p style={{ margin: "16px 0 10px" }}>
-            <b>{plan.totalHours}h</b> of study across <b>{plan.weeks.length} weeks</b>
+            <b>{plan.totalHours}h</b> over <b>{plan.weeks.length} weeks</b>
             {crunchCount > 0 ? (
               <>
-                , with <b style={{ color: "var(--crunch)" }}>{crunchCount} crunch week{crunchCount === 1 ? "" : "s"}</b>.
-                Select a bar to see why.
+                {" "}· <b style={{ color: "var(--crunch)" }}>{crunchCount} crunch week{crunchCount === 1 ? "" : "s"}</b>. Tap a bar for details.
               </>
             ) : (
-              <>. No crunch weeks.</>
+              <> · No crunch weeks.</>
             )}
           </p>
 
@@ -178,7 +188,7 @@ export default function PlanView({ plan, items, colors, settings, onSettings, sk
                   {copied ? "Copied" : "Copy this week as text"}
                 </button>
               </h3>
-              {week.reasons.length > 0 && <p className="reasons">{week.reasons.join(". ")}.</p>}
+              {week.reasons.length > 0 && <p className="reasons">{week.reasons[0]}.</p>}
 
               {week.dueItems.length > 0 && (
                 <ul className="due-list">
@@ -197,7 +207,7 @@ export default function PlanView({ plan, items, colors, settings, onSettings, sk
 
               <div className="days">
                 {Array.from({ length: 7 }, (_, d) => addDays(week.weekStart, d)).map((date) => {
-                  const blocks = plan.blocks.filter((b) => b.date === date);
+                  const blocks = groupBlocks(plan.blocks.filter((b) => b.date === date));
                   const due = items.filter((i) => !i.done && i.dueDate === date);
                   return (
                     <div key={date} className={`day${date === today ? " today" : ""}`}>
@@ -209,7 +219,7 @@ export default function PlanView({ plan, items, colors, settings, onSettings, sk
                       ))}
                       {blocks.map((b) => (
                         <span key={b.id} className="chip" style={{ background: colors[b.course] }}>
-                          <b>{b.hours}h</b> {b.kind === "review" ? "Revise" : "Work on"} {b.title}
+                          <b>{b.hours}h</b> {b.title}
                         </span>
                       ))}
                     </div>

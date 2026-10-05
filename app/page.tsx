@@ -28,7 +28,7 @@ export default function Home() {
   const [extractWarnings, setExtractWarnings] = useState<string[]>([]);
   const [ready, setReady] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
-  const [reviewOpen, setReviewOpen] = useState(true);
+  const [reviewOpen, setReviewOpen] = useState(false);
 
   // Restore the last session so a refresh doesn't lose the semester.
   useEffect(() => {
@@ -62,6 +62,8 @@ export default function Home() {
     [extractWarnings, items],
   );
 
+  const needsCheck = items.filter((i) => !i.done && (i.verify?.length ?? 0) > 0 && !i.confirmed).length;
+
   const plan = useMemo(
     () =>
       generatePlan(datedItems, {
@@ -82,8 +84,7 @@ export default function Home() {
         </h1>
         {items.length === 0 && (
           <p>
-            Upload your syllabi. Syllabuddy finds every deadline, you check them, and you get a week-by-week study
-            plan that shows where the crunch is before it hits.
+            Drop in your syllabi. Get one plan that shows the crunch weeks before they hit.
           </p>
         )}
       </header>
@@ -101,11 +102,11 @@ export default function Home() {
         <div className="step-head">
           <span className="n">1</span>
           <h2 id="s1">{items.length > 0 ? "Syllabi" : "Add a syllabus"}</h2>
-          <span className="hint">
-            {items.length > 0
-              ? `${items.length} items from ${Object.keys(colors).length} course${Object.keys(colors).length === 1 ? "" : "s"}.`
-              : "Add one per course. Deadlines from every course go into the same plan."}
-          </span>
+          {items.length > 0 && (
+            <span className="hint">
+              {items.length} items · {Object.keys(colors).length} course{Object.keys(colors).length === 1 ? "" : "s"}
+            </span>
+          )}
           {items.length > 0 && (
             <button className="btn ghost small" onClick={() => setAddOpen((o) => !o)} aria-expanded={addOpen}>
               {addOpen ? "Hide" : "Add or replace a syllabus"}
@@ -135,10 +136,12 @@ export default function Home() {
           <section className="step" aria-labelledby="s2">
             <div className="step-head">
               <span className="n">2</span>
-              <h2 id="s2">Check what Syllabuddy found</h2>
-              <span className="hint">Fix anything that looks off. Every field is editable.</span>
+              <h2 id="s2">Check the deadlines</h2>
+              <span className="hint">
+                {needsCheck > 0 ? `${needsCheck} to check` : "Everything looks right"}
+              </span>
               <button className="btn ghost small" onClick={() => setReviewOpen((o) => !o)} aria-expanded={reviewOpen}>
-                {reviewOpen ? "Hide table" : `Show all ${items.length} items`}
+                {reviewOpen ? "Hide" : "Review and edit"}
               </button>
             </div>
             {allWarnings.length > 0 && (
@@ -156,8 +159,7 @@ export default function Home() {
           <section className="step" aria-labelledby="s3">
             <div className="step-head">
               <span className="n">3</span>
-              <h2 id="s3">Your study plan</h2>
-              <span className="hint">Work is spread out before each deadline, not left for the night before.</span>
+              <h2 id="s3">Your plan</h2>
             </div>
             <AdjustPanel
               items={datedItems}
@@ -187,7 +189,7 @@ export default function Home() {
       )}
 
       <p className="footer-note">
-        Study-time estimates are a starting point. Change the hours on any item and the plan updates.
+        Hours are estimates. Edit any item and the plan updates.
         <button
           className="linkish"
           onClick={() => {

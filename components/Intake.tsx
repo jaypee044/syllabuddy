@@ -45,11 +45,7 @@ export default function Intake({ onExtracted, onLoadSample, hasItems }: Props) {
     <div className="card">
       <div className="intake">
         {!hasItems && (
-          <ol className="firstrun">
-            <li>Open your syllabus and find the assessment section (the list of assignments, exams and weights).</li>
-            <li>Drop the PDF below, or paste that section as text. Pasted text gets the strongest checking.</li>
-            <li>Check the deadlines Syllabuddy finds, then read your plan.</li>
-          </ol>
+          <p className="firstrun">Drop a PDF, or paste the assessment section of your syllabus.</p>
         )}
         <div
           className={`drop${over ? " over" : ""}`}
@@ -78,7 +74,7 @@ export default function Intake({ onExtracted, onLoadSample, hasItems }: Props) {
           <small>
             {file
               ? `${(file.size / 1024).toFixed(0)} KB. Click to choose a different file.`
-              : "PDF, or a photo or screenshot (PNG, JPG, WEBP). Up to 10 MB."}
+              : "PDF or image, up to 10 MB"}
           </small>
           <input
             ref={inputRef}
@@ -91,7 +87,7 @@ export default function Intake({ onExtracted, onLoadSample, hasItems }: Props) {
 
         <textarea
           aria-label="Syllabus text"
-          placeholder="Or paste the assessment section of your syllabus here"
+          placeholder="Or paste the text here"
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
@@ -121,14 +117,12 @@ export default function Intake({ onExtracted, onLoadSample, hasItems }: Props) {
           <label className="replace">
             <input type="checkbox" checked={replace} onChange={(e) => setReplace(e.target.checked)} />
             <span>
-              Start fresh: replace the deadlines and time off already here. Untick this to add another course to the
-              same plan.
+              Replace what's here. Untick to add another course.
             </span>
           </label>
         )}
         <p className="privacy">
-          Your syllabus is sent to an AI service to be read. It isn't stored on a server. Your plan stays in this
-          browser, and you can erase it at any time from the bottom of the page.
+          Sent to an AI service to be read, not stored on a server. Your plan stays in this browser.
         </p>
       </div>
       {error && (

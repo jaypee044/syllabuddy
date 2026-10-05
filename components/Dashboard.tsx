@@ -31,8 +31,7 @@ export default function Dashboard({ items, plan, colors, onDone }: Props) {
                 <i style={{ width: `${pct}%` }} />
               </span>
               <span className="sub">
-                {crunch ? "Crunch week. " : w.load === "light" ? "Light week. " : "Manageable. "}
-                {w.reasons[0] ? `${w.reasons[0]}.` : ""}
+                {crunch ? "Crunch week" : w.load === "light" ? "Light week" : "Manageable"}
               </span>
             </>
           ) : (
@@ -46,8 +45,7 @@ export default function Dashboard({ items, plan, colors, onDone }: Props) {
             <>
               <span className="big">{inDaysLabel(d.next.inDays)}</span>
               <span className="sub">
-                <b>{d.next.item.title}</b>, {d.next.item.course}. {formatShort(d.next.item.dueDate)}
-                {d.next.item.weightPct ? `, ${d.next.item.weightPct}% of grade` : ""}
+                <b>{d.next.item.title}</b> · {d.next.item.course}
               </span>
             </>
           ) : (
@@ -56,11 +54,11 @@ export default function Dashboard({ items, plan, colors, onDone }: Props) {
         </div>
 
         <div className="tile">
-          <span className="k">Grade due in 14 days</span>
+          <span className="k">Grade due soon</span>
           <span className="big">
-            {d.soon.weightPct}% <small>across {d.soon.count} item{d.soon.count === 1 ? "" : "s"}</small>
+            {d.soon.weightPct}%
           </span>
-          <span className="sub">Share of your final grades landing in the next two weeks.</span>
+          <span className="sub">of your grade, in the next 14 days</span>
         </div>
 
         <div className={`tile${d.needsChecking > 0 || d.overdue.length > 0 ? " warn-tile" : ""}`}>
@@ -69,11 +67,11 @@ export default function Dashboard({ items, plan, colors, onDone }: Props) {
           <span className="sub">
             {d.needsChecking > 0 && (
               <>
-                {d.needsChecking} flagged item{d.needsChecking === 1 ? "" : "s"} to check.{" "}
+                {d.needsChecking} to check{" "}
               </>
             )}
-            {d.overdue.length > 0 && <>{d.overdue.length} overdue. </>}
-            {d.needsChecking + d.overdue.length === 0 && "All checked, nothing overdue."}
+            {d.overdue.length > 0 && <>{d.overdue.length} overdue</>}
+            {d.needsChecking + d.overdue.length === 0 && "All clear"}
           </span>
         </div>
       </div>
@@ -83,7 +81,7 @@ export default function Dashboard({ items, plan, colors, onDone }: Props) {
           Today <span className="badge">{d.todayHours}h planned</span>
         </h3>
         {d.todayBlocks.length === 0 ? (
-          <p className="empty">Nothing scheduled today. Enjoy it, or get ahead on tomorrow.</p>
+          <p className="empty">Nothing planned today.</p>
         ) : (
           <ul>
             {d.todayBlocks.map((b) => (
