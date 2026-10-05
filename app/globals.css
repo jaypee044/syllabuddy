@@ -660,3 +660,6 @@ table.items tr.done td:not(.chk):not(.act) {
 .today-list li>span:nth-child(2){flex:1}
 .today-list li small{color:var(--ink-soft);margin-left:6px}
 .today-list .dot{width:10px;height:10px;border-radius:50%;flex:none}
+
+.firstrun{margin:0 0 14px;padding-left:20px;color:var(--ink-soft);font-size:14.5px;display:grid;gap:4px}
+.week-detail h3{display:flex;flex-wrap:wrap;gap:8px;align-items:center}

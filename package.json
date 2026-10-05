@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "tsx scripts/test-planner.ts && tsx scripts/test-safety.ts && tsx scripts/test-adjust.ts && tsx scripts/test-eval.ts && tsx scripts/test-dashboard.ts",
+    "test": "tsx scripts/test-planner.ts && tsx scripts/test-safety.ts && tsx scripts/test-adjust.ts && tsx scripts/test-eval.ts && tsx scripts/test-dashboard.ts && tsx scripts/test-summary.ts",
     "eval": "tsx --env-file=.env.local scripts/eval-extraction.ts",
     "test:planner": "tsx scripts/test-planner.ts",
     "test:safety": "tsx scripts/test-safety.ts",

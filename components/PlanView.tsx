@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { addDays, formatDay, formatShort, todayISO } from "@/lib/dates";
 import { buildIcs } from "@/lib/ics";
+import { buildWeekSummary } from "@/lib/summary";
 import type { Availability, CourseItem, Plan } from "@/lib/types";
 
 export interface PlanSettings {
@@ -23,6 +24,7 @@ interface Props {
 
 export default function PlanView({ plan, items, colors, settings, onSettings, skipped }: Props) {
   const [picked, setPicked] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const today = todayISO();
 
   const week = useMemo(() => {
@@ -44,6 +46,18 @@ export default function PlanView({ plan, items, colors, settings, onSettings, sk
     a.download = "semester-plan.ics";
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  async function copyWeek() {
+    if (!week) return;
+    const text = buildWeekSummary(items, plan, week.weekStart);
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      window.prompt("Copy this plan:", text);
+    }
   }
 
   return (
@@ -160,6 +174,9 @@ export default function PlanView({ plan, items, colors, settings, onSettings, sk
                 <span className="badge">
                   {week.scheduledHours}h of {week.capacityHours}h
                 </span>
+                <button className="btn ghost small" onClick={copyWeek} style={{ marginLeft: "auto" }}>
+                  {copied ? "Copied" : "Copy this week as text"}
+                </button>
               </h3>
               {week.reasons.length > 0 && <p className="reasons">{week.reasons.join(". ")}.</p>}
 

@@ -6,7 +6,7 @@ import { SAMPLE_INJECTION_TEXT, SAMPLE_SYLLABUS_TEXT } from "@/lib/sample";
 import type { CourseItem, ExtractResponse } from "@/lib/types";
 
 interface Props {
-  onExtracted: (items: CourseItem[], warnings: string[]) => void;
+  onExtracted: (items: CourseItem[], warnings: string[], replace: boolean) => void;
   onLoadSample: () => void;
   hasItems: boolean;
 }
@@ -17,6 +17,7 @@ export default function Intake({ onExtracted, onLoadSample, hasItems }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [over, setOver] = useState(false);
+  const [replace, setReplace] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function extract() {
@@ -30,7 +31,7 @@ export default function Intake({ onExtracted, onLoadSample, hasItems }: Props) {
       const res = await fetch("/api/extract", { method: "POST", body: form });
       const data = (await res.json()) as ExtractResponse & { error?: string };
       if (!res.ok) throw new Error(data.error || "Extraction failed.");
-      onExtracted(data.items, data.warnings);
+      onExtracted(data.items, data.warnings, hasItems && replace);
       setFile(null);
       setText("");
     } catch (e) {
@@ -43,6 +44,13 @@ export default function Intake({ onExtracted, onLoadSample, hasItems }: Props) {
   return (
     <div className="card">
       <div className="intake">
+        {!hasItems && (
+          <ol className="firstrun">
+            <li>Open your syllabus and find the assessment section (the list of assignments, exams and weights).</li>
+            <li>Drop the PDF below, or paste that section as text. Pasted text gets the strongest checking.</li>
+            <li>Check the deadlines Syllabuddy finds, then read your plan.</li>
+          </ol>
+        )}
         <div
           className={`drop${over ? " over" : ""}`}
           role="button"
@@ -109,6 +117,15 @@ export default function Intake({ onExtracted, onLoadSample, hasItems }: Props) {
             </button>
           )}
         </div>
+        {hasItems && (
+          <label className="replace">
+            <input type="checkbox" checked={replace} onChange={(e) => setReplace(e.target.checked)} />
+            <span>
+              Start fresh: replace the deadlines and time off already here. Untick this to add another course to the
+              same plan.
+            </span>
+          </label>
+        )}
         <p className="privacy">
           Your syllabus is sent to an AI service to be read. It isn't stored on a server. Your plan stays in this
           browser, and you can erase it at any time from the bottom of the page.
