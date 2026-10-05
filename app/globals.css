@@ -663,3 +663,35 @@ table.items tr.done td:not(.chk):not(.act) {
 
 .firstrun{margin:0 0 14px;padding-left:20px;color:var(--ink-soft);font-size:14.5px;display:grid;gap:4px}
 .week-detail h3{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+
+/* ---------- polish ---------- */
+.masthead.compact{padding:22px 0 14px}
+.masthead.compact .brand{margin-bottom:10px}
+.masthead.compact h1{font-size:clamp(1.8rem,4.5vw,2.6rem);max-width:none}
+.step-head .btn{margin-left:auto}
+
+.tile{border-color:var(--ink);border-width:1.5px;box-shadow:3px 3px 0 var(--line)}
+.tile.alert-tile{box-shadow:3px 3px 0 #f4b9b3}
+.tile.warn-tile{box-shadow:3px 3px 0 #f1d98a}
+.dash-grid{grid-template-columns:1.4fr 1.2fr 1fr 1fr}
+.dash-grid .tile:first-child .big{font-size:38px}
+.today-list{border-color:var(--ink);border-width:1.5px}
+.today-list li{padding:6px 0;border-top:1px dashed var(--line)}
+.today-list li:first-child{border-top:0}
+@media (max-width:900px){.dash-grid{grid-template-columns:1fr 1fr}}
+@media (max-width:480px){
+  .dash-grid{grid-template-columns:1fr 1fr;gap:8px}
+  .tile{padding:12px}
+  .tile .big{font-size:24px}
+  .dash-grid .tile:first-child{grid-column:1 / -1}
+  .dash-grid .tile:first-child .big{font-size:30px}
+  .step-head .btn{margin-left:0}
+  .today-list li{flex-wrap:wrap}
+}
+table.items{min-width:860px}
+table.items td:nth-child(2){min-width:190px}
+table.items td:nth-child(3){min-width:170px}
+table.items td:nth-child(4){min-width:124px}
+.strip button.crunch .bar{background:var(--crunch)}
+.week-detail{margin-top:18px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}

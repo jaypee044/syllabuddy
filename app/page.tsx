@@ -27,6 +27,8 @@ export default function Home() {
   const [settings, setSettings] = useState<PlanSettings>(DEFAULT_SETTINGS);
   const [extractWarnings, setExtractWarnings] = useState<string[]>([]);
   const [ready, setReady] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(true);
 
   // Restore the last session so a refresh doesn't lose the semester.
   useEffect(() => {
@@ -73,15 +75,17 @@ export default function Home() {
 
   return (
     <main className="wrap">
-      <header className="masthead">
+      <header className={`masthead${items.length > 0 ? " compact" : ""}`}>
         <div className="brand">Syllabuddy</div>
         <h1>
           Your semester, <span>planned.</span>
         </h1>
-        <p>
-          Upload your syllabi. Syllabuddy finds every deadline, you check them, and you get a week-by-week study
-          plan that shows where the crunch is before it hits.
-        </p>
+        {items.length === 0 && (
+          <p>
+            Upload your syllabi. Syllabuddy finds every deadline, you check them, and you get a week-by-week study
+            plan that shows where the crunch is before it hits.
+          </p>
+        )}
       </header>
 
       {items.length > 0 && (
@@ -96,21 +100,34 @@ export default function Home() {
       <section className="step" aria-labelledby="s1">
         <div className="step-head">
           <span className="n">1</span>
-          <h2 id="s1">Add a syllabus</h2>
-          <span className="hint">Add one per course. Deadlines from every course go into the same plan.</span>
+          <h2 id="s1">{items.length > 0 ? "Syllabi" : "Add a syllabus"}</h2>
+          <span className="hint">
+            {items.length > 0
+              ? `${items.length} items from ${Object.keys(colors).length} course${Object.keys(colors).length === 1 ? "" : "s"}.`
+              : "Add one per course. Deadlines from every course go into the same plan."}
+          </span>
+          {items.length > 0 && (
+            <button className="btn ghost small" onClick={() => setAddOpen((o) => !o)} aria-expanded={addOpen}>
+              {addOpen ? "Hide" : "Add or replace a syllabus"}
+            </button>
+          )}
         </div>
-        <Intake
-          hasItems={items.length > 0}
-          onLoadSample={() => {
-            setItems(SAMPLE_ITEMS);
-            setExtractWarnings([]);
-          }}
-          onExtracted={(added, warnings, replace) => {
-            if (replace) setSettings((s) => ({ ...s, availability: [] }));
-            setItems((prev) => (replace ? added : [...prev, ...added]));
-            setExtractWarnings(warnings);
-          }}
-        />
+        {(items.length === 0 || addOpen) && (
+          <Intake
+            hasItems={items.length > 0}
+            onLoadSample={() => {
+              setItems(SAMPLE_ITEMS);
+              setExtractWarnings([]);
+            }}
+            onExtracted={(added, warnings, replace) => {
+              if (replace) setSettings((s) => ({ ...s, availability: [] }));
+              setItems((prev) => (replace ? added : [...prev, ...added]));
+              setExtractWarnings(warnings);
+              setReviewOpen(true);
+              setAddOpen(false);
+            }}
+          />
+        )}
       </section>
 
       {items.length > 0 && (
@@ -120,6 +137,9 @@ export default function Home() {
               <span className="n">2</span>
               <h2 id="s2">Check what Syllabuddy found</h2>
               <span className="hint">Fix anything that looks off. Every field is editable.</span>
+              <button className="btn ghost small" onClick={() => setReviewOpen((o) => !o)} aria-expanded={reviewOpen}>
+                {reviewOpen ? "Hide table" : `Show all ${items.length} items`}
+              </button>
             </div>
             {allWarnings.length > 0 && (
               <div className="alert soft" style={{ marginBottom: 12 }}>
@@ -130,7 +150,7 @@ export default function Home() {
                 </ul>
               </div>
             )}
-            <ReviewTable items={items} colors={colors} onChange={setItems} />
+            {reviewOpen && <ReviewTable items={items} colors={colors} onChange={setItems} />}
           </section>
 
           <section className="step" aria-labelledby="s3">
