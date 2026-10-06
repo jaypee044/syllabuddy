@@ -100,7 +100,35 @@ export interface Plan {
   totalHours: number;
 }
 
+/** What happened when the AI was called, shown to the student under the table. */
+export interface ReadMeta {
+  provider: "gemini" | "claude";
+  model: string;
+  /** Total AI calls made, counting retries and the repair call. */
+  calls: number;
+  /** Time spent waiting for the AI, in milliseconds. */
+  ms: number;
+  /** True when the first-choice model wasn't the one that answered. */
+  fellBack: boolean;
+  /** How the text was read: pasted text, a PDF's text layer, or the file itself. */
+  source?: "text" | "pdf-text" | "file";
+  repair?: RepairReport;
+}
+
+/** Result of the check-and-repair step. */
+export interface RepairReport {
+  /** Items the checks flagged as wrong or unsupported and sent back to the AI. */
+  attempted: number;
+  /** Items whose problems were gone after the AI re-read the syllabus. */
+  fixed: number;
+  /** Items the AI said aren't in the syllabus, so they were dropped. */
+  removed: number;
+  /** Items still flagged after repair, left for the student. */
+  stillFlagged: number;
+}
+
 export interface ExtractResponse {
   items: CourseItem[];
   warnings: string[];
+  meta?: ReadMeta;
 }

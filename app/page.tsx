@@ -12,7 +12,8 @@ import { generatePlan } from "@/lib/planner";
 import { applyAdjustments } from "@/lib/adjust";
 import { checkWeights } from "@/lib/safety";
 import { SAMPLE_ITEMS } from "@/lib/sample";
-import type { CourseItem } from "@/lib/types";
+import { describeRead } from "@/lib/meta";
+import type { CourseItem, ReadMeta } from "@/lib/types";
 
 const STORE_KEY = "semester-planner:v1";
 const DEFAULT_SETTINGS: PlanSettings = {
@@ -27,6 +28,7 @@ export default function Home() {
   const [settings, setSettings] = useState<PlanSettings>(DEFAULT_SETTINGS);
   const [extractWarnings, setExtractWarnings] = useState<string[]>([]);
   const [ready, setReady] = useState(false);
+  const [readMeta, setReadMeta] = useState<ReadMeta | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
 
@@ -38,6 +40,7 @@ export default function Home() {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed.items)) setItems(parsed.items);
         if (parsed.settings) setSettings({ ...DEFAULT_SETTINGS, ...parsed.settings });
+        if (parsed.readMeta) setReadMeta(parsed.readMeta);
       }
     } catch {
       /* storage unavailable: start fresh */
@@ -48,11 +51,11 @@ export default function Home() {
   useEffect(() => {
     if (!ready) return;
     try {
-      localStorage.setItem(STORE_KEY, JSON.stringify({ items, settings }));
+      localStorage.setItem(STORE_KEY, JSON.stringify({ items, settings, readMeta }));
     } catch {
       /* ignore */
     }
-  }, [items, settings, ready]);
+  }, [items, settings, readMeta, ready]);
 
   const colors = useMemo(() => courseColors(items), [items]);
   const datedItems = useMemo(() => items.filter((i) => isValidISO(i.dueDate)), [items]);
@@ -120,7 +123,8 @@ export default function Home() {
               setItems(SAMPLE_ITEMS);
               setExtractWarnings([]);
             }}
-            onExtracted={(added, warnings, replace) => {
+            onExtracted={(added, warnings, replace, meta) => {
+              if (meta) setReadMeta(meta);
               if (replace) setSettings((s) => ({ ...s, availability: [] }));
               setItems((prev) => (replace ? added : [...prev, ...added]));
               setExtractWarnings(warnings);
@@ -153,6 +157,7 @@ export default function Home() {
                 </ul>
               </div>
             )}
+            {readMeta && <p className="readmeta">{describeRead(readMeta)}</p>}
             {reviewOpen && <ReviewTable items={items} colors={colors} onChange={setItems} />}
           </section>
 
@@ -200,6 +205,7 @@ export default function Home() {
               /* ignore */
             }
             setItems([]);
+            setReadMeta(null);
             setSettings(DEFAULT_SETTINGS);
             setExtractWarnings([]);
           }}

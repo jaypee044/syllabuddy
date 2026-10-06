@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import { extractFromSyllabus } from "@/lib/extraction";
 import { hasApiKey, NO_KEY_MESSAGE } from "@/lib/llm";
 import { hasUsableText, MAX_PDF_CHARS, readPdfText } from "@/lib/pdf-text";
-import { processExtraction, type RawResult } from "@/lib/safety";
+import { runExtraction } from "@/lib/pipeline";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -35,6 +34,7 @@ export async function POST(req: Request) {
 
   let file: { mime: string; data: string } | null = null;
   let sourceText = text;
+  let pdfRead = false;
   const notes: string[] = [];
   if (upload instanceof File && upload.size > 0) {
     if (upload.size > MAX_FILE_BYTES) return fail("File is larger than 10 MB.");
@@ -58,6 +58,7 @@ export async function POST(req: Request) {
     }
     if (pdfText) {
       sourceText = text ? `${pdfText}\n\n${text}` : pdfText;
+      pdfRead = true;
     } else {
       // Scanned PDF or image: no text to check against, so the model reads the file itself.
       file = { mime: upload.type, data: Buffer.from(bytes).toString("base64") };
@@ -68,17 +69,21 @@ export async function POST(req: Request) {
   }
   if (!file && !sourceText) return fail("Provide a syllabus file or paste its text.");
 
-  let raw: RawResult;
+  // Read, check against the syllabus, and send anything that fails the checks back once.
+  // Nothing the model returns is trusted: quotes can be verified against pasted text and PDF
+  // text, but not against scans or images.
+  let result;
   try {
-    raw = await extractFromSyllabus({ text: sourceText, file, today });
+    ({ result } = await runExtraction({
+      text: sourceText,
+      file,
+      today,
+      source: file ? "file" : pdfRead ? "pdf-text" : "text",
+    }));
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
     return fail(`Extraction failed: ${msg}`, 502);
   }
-
-  // Nothing the model returned is trusted: check it against the source before
-  // it reaches the student. Quotes can be verified against pasted text and PDF text, but not scans or images.
-  const result = processExtraction(raw, { today, sourceText: file ? undefined : sourceText });
   result.warnings.push(...notes);
   return NextResponse.json(result);
 }

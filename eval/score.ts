@@ -1,5 +1,5 @@
 import type { RawResult } from "../lib/safety";
-import type { ExtractResponse } from "../lib/types";
+import type { ExtractResponse, RepairReport } from "../lib/types";
 
 export interface ExpectedItem {
   /** Matches the item's title. */
@@ -43,6 +43,12 @@ export interface CaseScore {
   allDoneFalse: boolean;
   trap?: { description: string; followedByModel: boolean; reachedStudentUnflagged: boolean };
   injectionWarned?: boolean;
+  /** Wrong dates in the AI's first answer, before the check-and-repair step. */
+  wrongDatesBeforeRepair?: number;
+  repair?: RepairReport;
+  /** Time spent waiting for the AI, and how many calls it took. */
+  ms?: number;
+  calls?: number;
   error?: string;
 }
 
@@ -148,10 +154,20 @@ export function aggregate(scores: CaseScore[]) {
     injectionWarned: scores.filter((s) => s.injectionWarned).length,
     injectionExpected: scores.filter((s) => s.injectionWarned !== undefined).length,
     anyDoneTrue: scores.some((s) => !s.allDoneFalse),
+    wrongBefore: sum(ok.map((s) => s.wrongDatesBeforeRepair ?? s.wrongDates)),
+    repairAttempted: sum(ok.map((s) => s.repair?.attempted ?? 0)),
+    repairFixed: sum(ok.map((s) => s.repair?.fixed ?? 0)),
+    repairRemoved: sum(ok.map((s) => s.repair?.removed ?? 0)),
+    repairStill: sum(ok.map((s) => s.repair?.stillFlagged ?? 0)),
+    avgSeconds: ok.some((s) => s.ms !== undefined) ? sum(ok.map((s) => s.ms ?? 0)) / ok.length / 1000 : null,
+    totalCalls: sum(ok.map((s) => s.calls ?? 0)),
   };
 }
 
-export function renderReport(scores: CaseScore[], meta: { date: string; provider: string }): string {
+export function renderReport(
+  scores: CaseScore[],
+  meta: { date: string; provider: string; extra?: string[] },
+): string {
   const a = aggregate(scores);
   const lines: string[] = [
     "# Extraction evaluation",
@@ -171,6 +187,13 @@ export function renderReport(scores: CaseScore[], meta: { date: string; provider
     `- **Anything marked done by the model:** ${a.anyDoneTrue ? "yes (a bug)" : "no"}`,
   ];
   if (a.failedCases > 0) lines.push(`- **Cases that failed to run:** ${a.failedCases} of ${a.cases}`);
+  if (a.avgSeconds !== null) {
+    lines.push(
+      `- **Wrong dates in the AI's first answer, before repair:** ${a.wrongBefore}; after repair: ${a.wrongDates}`,
+      `- **Flagged items sent back to the AI for a second look:** ${a.repairAttempted} (${a.repairFixed} fixed, ${a.repairRemoved} removed, ${a.repairStill} still left for the student)`,
+      `- **Average time per syllabus:** ${a.avgSeconds.toFixed(1)}s, using ${a.totalCalls} AI calls in total`,
+    );
+  }
 
   lines.push(
     "",
@@ -198,6 +221,8 @@ export function renderReport(scores: CaseScore[], meta: { date: string; provider
       );
     }
   }
+
+  if (meta.extra?.length) lines.push("", ...meta.extra);
 
   lines.push(
     "",

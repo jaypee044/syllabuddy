@@ -50,7 +50,9 @@ The AI **does not** build the plan. `lib/planner.ts` is deterministic code, so t
 **Design choices that go beyond calling an API:**
 - **Structured output.** The model must return a fixed JSON shape, not free text.
 - **Untrusted input.** The syllabus is treated as data. The prompt says so, and the output is checked for planted instructions.
-- **Reliability.** Each call has a timeout, up to three attempts with backoff, and a fallback to another provider or model when one is busy or retired.
+- **Check and repair.** When the checks find an item whose quoted line isn't in the syllabus, or whose date disagrees with its quote, the AI is sent just those items with the exact problem and asked to look again. Its answer goes through the same checks, so the AI never grades its own work. Anything still wrong is left for the student.
+- **Reliability.** Each call has a timeout, up to three attempts with backoff, and a fallback to another provider or model when one is busy or retired. These failure paths are tested with a simulated AI service (busy, retired model, timeout, bad JSON, rejected key).
+- **Visible behaviour.** Under the table, the app says which model read the syllabus, how long it took, whether a backup answered, and what the repair step did.
 - **Human in the loop.** A review step sits between extraction and planning, and between the AI's proposed changes and the plan.
 
 ## 5. External Tools & Datasets
@@ -74,8 +76,8 @@ The AI **does not** build the plan. `lib/planner.ts` is deterministic code, so t
 
 ```bash
 # 1. Get the code
-git clone <your-repo-url>
-cd semester-planner
+git clone https://github.com/jaypee044/Syllabuddy.git
+cd Syllabuddy
 
 # 2. Install dependencies
 npm install
@@ -111,7 +113,8 @@ npm test
 **Run the evaluation** (needs a key; calls the real model and writes `eval/results.md`):
 
 ```bash
-npm run eval
+npm run eval              # one run
+npm run eval -- --runs=3  # three runs, to check the results are consistent
 ```
 
 **Troubleshooting**
@@ -138,7 +141,7 @@ The syllabus a student uploads is untrusted, and the model can be wrong or be tr
 
 ### Testing done
 
-- **Unit tests** (`npm test`) cover the planner, the safety checks (20 checks), the plan-change validation (13), the evaluation scoring (9) and the dashboard (6). They include a case where the model is assumed to have obeyed a planted instruction, plus fabricated quotes, wrong dates and oversized output. These use simulated model output.
+- **Unit tests** (`npm test`, no key needed) cover the planner, the safety checks (20), the plan-change validation (13), the evaluation scoring (9), the dashboard (6), PDF reading (6), **the AI client against a simulated service that is busy, retired, slow or confused (10)**, **the check-and-repair step (10)** and **the whole read, check and repair flow (4)**. They include a case where the model is assumed to have obeyed a planted instruction, plus fabricated quotes, wrong dates, a "fix" that is itself wrong, and oversized output. These use simulated model output.
 - **Evaluation on a real model** (`npm run eval`): six test syllabi with known answers, including a list, prose, week numbers, a numeric-date table and two attack syllabi. Run on 2026-10-05 with Gemini `gemini-3.8-flash`:
 
 | Measure | Result |

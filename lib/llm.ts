@@ -58,7 +58,22 @@ export interface GenerateOptions {
 
 type ImageType = "image/png" | "image/jpeg" | "image/webp" | "image/gif";
 
-async function viaClaude(o: GenerateOptions, apiKey: string): Promise<unknown> {
+export interface CallMeta {
+  provider: "gemini" | "claude";
+  model: string;
+  calls: number;
+  ms: number;
+  fellBack: boolean;
+}
+
+/** Filled in as a request moves through retries and fallbacks. */
+interface Trace {
+  provider: "gemini" | "claude";
+  model: string;
+  calls: number;
+}
+
+async function viaClaude(o: GenerateOptions, apiKey: string, t?: Trace): Promise<unknown> {
   const content: Anthropic.Messages.ContentBlockParam[] = [];
   if (o.file) {
     content.push(
@@ -85,10 +100,11 @@ async function viaClaude(o: GenerateOptions, apiKey: string): Promise<unknown> {
     (b): b is Anthropic.Messages.ToolUseBlock => b.type === "tool_use",
   );
   if (!toolUse) throw new Error("The AI did not return structured data.");
+  if (t) Object.assign(t, { provider: "claude", model: CLAUDE_MODEL });
   return toolUse.input;
 }
 
-async function viaGemini(o: GenerateOptions, apiKey: string, model: string): Promise<unknown> {
+async function viaGemini(o: GenerateOptions, apiKey: string, model: string, t?: Trace): Promise<unknown> {
   const parts: Array<Record<string, unknown>> = [];
   if (o.file) parts.push({ inline_data: { mime_type: o.file.mime, data: o.file.data } });
   for (const t of o.textParts ?? []) parts.push({ text: t });
@@ -124,11 +140,14 @@ async function viaGemini(o: GenerateOptions, apiKey: string, model: string): Pro
   };
   const out = (json.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? "").join("");
   if (!out) throw new Error("Gemini returned no content.");
+  let parsed: unknown;
   try {
-    return JSON.parse(out.replace(/^```(?:json)?\s*|\s*```$/g, ""));
+    parsed = JSON.parse(out.replace(/^```(?:json)?\s*|\s*```$/g, ""));
   } catch {
     throw new Error("Gemini returned something that wasn't valid JSON.");
   }
+  if (t) Object.assign(t, { provider: "gemini", model });
+  return parsed;
 }
 
 // ---- Gemini model fallback -------------------------------------------------
@@ -136,6 +155,11 @@ async function viaGemini(o: GenerateOptions, apiKey: string, model: string): Pro
 // gone, ask Google which other Flash models this key can use and try those.
 
 let modelCache: string[] | null = null;
+
+/** For tests: forget the cached model list. */
+export function resetModelCache() {
+  modelCache = null;
+}
 
 const versionOf = (name: string) => Number(/gemini-(\d+(?:\.\d+)?)/.exec(name)?.[1] ?? 0);
 
@@ -167,16 +191,16 @@ async function listGeminiModels(apiKey: string): Promise<string[]> {
 const statusOf = (err: unknown) => (err as { status?: number }).status;
 const isCapacityError = (err: unknown) => [404, 429, 503].includes(statusOf(err) ?? 0);
 
-async function viaGeminiWithFallback(o: GenerateOptions, apiKey: string): Promise<unknown> {
+async function viaGeminiWithFallback(o: GenerateOptions, apiKey: string, t?: Trace): Promise<unknown> {
   try {
-    return await viaGemini(o, apiKey, GEMINI_MODEL);
+    return await viaGemini(o, apiKey, GEMINI_MODEL, t);
   } catch (first) {
     if (!isCapacityError(first)) throw first;
     let last: unknown = first;
     const alternatives = (await listGeminiModels(apiKey)).filter((m) => m !== GEMINI_MODEL).slice(0, 3);
     for (const model of alternatives) {
       try {
-        return await viaGemini(o, apiKey, model);
+        return await viaGemini(o, apiKey, model, t);
       } catch (err) {
         last = err;
         if (!isCapacityError(err)) throw err;
@@ -199,27 +223,49 @@ function isRetryable(err: unknown): boolean {
  * single misconfigured key doesn't take the whole app down.
  */
 export async function generateJson(o: GenerateOptions): Promise<Record<string, unknown>> {
+  return (await generateJsonWithMeta(o)).data;
+}
+
+/** Wait between retries. Tests set LLM_BACKOFF_MS=0 so they don't sit through the delay. */
+const backoffMs = () => Number(process.env.LLM_BACKOFF_MS ?? 1000);
+
+/** Same as generateJson, and also reports which model answered, how many calls it took and how long. */
+export async function generateJsonWithMeta(
+  o: GenerateOptions,
+): Promise<{ data: Record<string, unknown>; meta: CallMeta }> {
   const k = keys();
-  const providers: Array<() => Promise<unknown>> = [];
-  if (k.anthropic) providers.push(() => viaClaude(o, k.anthropic!));
-  if (k.gemini) providers.push(() => viaGeminiWithFallback(o, k.gemini!));
+  const providers: Array<(t: Trace) => Promise<unknown>> = [];
+  if (k.anthropic) providers.push((t) => viaClaude(o, k.anthropic!, t));
+  if (k.gemini) providers.push((t) => viaGeminiWithFallback(o, k.gemini!, t));
   if (providers.length === 0) throw new Error(NO_KEY_MESSAGE);
 
   let last: unknown;
   const startedAt = Date.now();
-  for (const call of providers) {
+  const trace: Trace = { provider: k.anthropic ? "claude" : "gemini", model: "", calls: 0 };
+  for (let p = 0; p < providers.length; p++) {
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       try {
-        const out = await call();
+        trace.calls++;
+        const out = await providers[p](trace);
         if (!out || typeof out !== "object" || Array.isArray(out)) {
           throw new Error("The AI returned data in the wrong shape.");
         }
-        return out as Record<string, unknown>;
+        const first = trace.provider === "gemini" ? GEMINI_MODEL : CLAUDE_MODEL;
+        return {
+          data: out as Record<string, unknown>,
+          meta: {
+            provider: trace.provider,
+            model: trace.model,
+            calls: trace.calls,
+            ms: Date.now() - startedAt,
+            fellBack: p > 0 || trace.model !== first,
+          },
+        };
       } catch (err) {
         last = err;
         if (attempt === MAX_ATTEMPTS || !isRetryable(err)) break;
         if (Date.now() - startedAt > RETRY_BUDGET_MS) break;
-        await new Promise((r) => setTimeout(r, 1000 * attempt));
+        await new Promise((r) => setTimeout(r, backoffMs() * attempt));
       }
     }
   }

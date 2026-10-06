@@ -3,10 +3,10 @@
 import { useRef, useState } from "react";
 import { todayISO } from "@/lib/dates";
 import { SAMPLE_INJECTION_TEXT, SAMPLE_SYLLABUS_TEXT } from "@/lib/sample";
-import type { CourseItem, ExtractResponse } from "@/lib/types";
+import type { CourseItem, ExtractResponse, ReadMeta } from "@/lib/types";
 
 interface Props {
-  onExtracted: (items: CourseItem[], warnings: string[], replace: boolean) => void;
+  onExtracted: (items: CourseItem[], warnings: string[], replace: boolean, meta?: ReadMeta) => void;
   onLoadSample: () => void;
   hasItems: boolean;
 }
@@ -31,7 +31,7 @@ export default function Intake({ onExtracted, onLoadSample, hasItems }: Props) {
       const res = await fetch("/api/extract", { method: "POST", body: form });
       const data = (await res.json()) as ExtractResponse & { error?: string };
       if (!res.ok) throw new Error(data.error || "Extraction failed.");
-      onExtracted(data.items, data.warnings, hasItems && replace);
+      onExtracted(data.items, data.warnings, hasItems && replace, data.meta);
       setFile(null);
       setText("");
     } catch (e) {

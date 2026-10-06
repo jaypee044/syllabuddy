@@ -736,3 +736,5 @@ table.items td{padding:9px 6px}
 .masthead.compact{padding-bottom:6px}
 .day .chip{padding:5px 8px}
 @media (max-width:480px){.dash-grid .tile:last-child{grid-column:1 / -1}}
+
+.readmeta{margin:0 0 14px;font-size:.85rem;color:var(--ink-soft)}

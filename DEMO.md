@@ -4,7 +4,7 @@
 
 - [ ] `npm run dev` is running and the page is open
 - [ ] Run **Extract deadlines** once on your real syllabus so you know the AI is reachable. Items you extract are saved in the browser, so a refresh won't lose them
-- [ ] Run `npm run eval` and paste the headline numbers into `SAFETY.md`. Have `eval/results.md` open in another tab
+- [ ] Run `npm test` once so you can show it passing, and `npm run eval` to paste the headline numbers into `SAFETY.md`. Have `eval/results.md` open in another tab
 - [ ] Have one syllabus pasted and ready, plus the sample semester loaded in a second tab as a backup
 - [ ] Say the numbers you show out loud from the screen. Don't quote figures you haven't seen in the app
 
@@ -24,6 +24,8 @@ Type "I'm sick from Thursday to Sunday" and click **Suggest changes**. Read the 
 
 **2:15 Safety (30 sec)**
 Click **Fill in injection test**, then **Extract deadlines**. Show the warning and the flagged item. "This syllabus tries to give the AI orders. The planted item still doesn't get through unflagged."
+
+**Optional, if a judge asks about reliability:** show the line under the table ("Read by Gemini ... in 4.2s") and run `npm run test:llm`. It simulates the AI being busy, retired, slow and returning bad data, and shows the app recovering or failing clearly.
 
 **2:45 Close (15 sec)**
 "We tested it on six syllabi, including two attacks. [Read the headline from eval/results.md.] Next: Google Calendar sync and course-load balancing across a whole degree."

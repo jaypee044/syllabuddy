@@ -1,4 +1,4 @@
-import { generateJson } from "./llm";
+import { generateJsonWithMeta, type CallMeta } from "./llm";
 import type { RawResult } from "./safety";
 import { ITEM_TYPES } from "./types";
 
@@ -70,8 +70,10 @@ export interface ExtractionInput {
   today: string;
 }
 
-export async function extractFromSyllabus(input: ExtractionInput): Promise<RawResult> {
-  return (await generateJson({
+export async function extractFromSyllabusWithMeta(
+  input: ExtractionInput,
+): Promise<{ raw: RawResult; meta: CallMeta }> {
+  const { data, meta } = await generateJsonWithMeta({
     instructions: instructions(input.today),
     textParts: input.text ? [`<syllabus>\n${input.text}\n</syllabus>`] : [],
     file: input.file ?? null,
@@ -79,5 +81,10 @@ export async function extractFromSyllabus(input: ExtractionInput): Promise<RawRe
     toolDescription: "Record every dated, assessed or required item found in the course syllabus.",
     schema: SCHEMA,
     shapeHint: SHAPE,
-  })) as RawResult;
+  });
+  return { raw: data as RawResult, meta };
+}
+
+export async function extractFromSyllabus(input: ExtractionInput): Promise<RawResult> {
+  return (await extractFromSyllabusWithMeta(input)).raw;
 }
