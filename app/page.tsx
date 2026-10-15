@@ -11,7 +11,7 @@ import { isValidISO, todayISO } from "@/lib/dates";
 import { generatePlan } from "@/lib/planner";
 import { applyAdjustments } from "@/lib/adjust";
 import { checkWeights } from "@/lib/safety";
-import { SAMPLE_ITEMS } from "@/lib/sample";
+import { sampleItemsFrom } from "@/lib/sample";
 import { describeRead } from "@/lib/meta";
 import type { CourseItem, ReadMeta } from "@/lib/types";
 
@@ -120,7 +120,7 @@ export default function Home() {
           <Intake
             hasItems={items.length > 0}
             onLoadSample={() => {
-              setItems(SAMPLE_ITEMS);
+              setItems(sampleItemsFrom(todayISO()));
               setExtractWarnings([]);
             }}
             onExtracted={(added, warnings, replace, meta) => {

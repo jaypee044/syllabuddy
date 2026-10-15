@@ -13,3 +13,19 @@ assert.ok(text.includes("DUE: Essay (ECON1101), 20% of grade"));
 assert.ok(/\dh Work on Essay/.test(text));
 assert.equal(buildWeekSummary(items, plan, "2030-01-07"), "");
 console.log("  ok  week summary text\n\nAll 1 summary tests passed.");
+
+import { sampleItemsFrom, SAMPLE_ITEMS } from "../lib/sample";
+import { diffDays, parseISO } from "../lib/dates";
+{
+  // Early in the semester the sample is unchanged.
+  assert.deepEqual(sampleItemsFrom("2026-10-05"), SAMPLE_ITEMS);
+  // Later, it moves forward by whole weeks, keeping weekdays, with nothing overdue.
+  for (const today of ["2026-10-15", "2026-11-20", "2027-03-02"]) {
+    const items = sampleItemsFrom(today);
+    assert.ok(items.every((i) => diffDays(i.dueDate, today) >= 1), `nothing overdue on ${today}`);
+    items.forEach((i, k) => {
+      assert.equal(parseISO(i.dueDate).getUTCDay(), parseISO(SAMPLE_ITEMS[k].dueDate).getUTCDay());
+    });
+  }
+  console.log("  ok  the sample semester always starts ahead of today");
+}

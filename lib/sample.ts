@@ -1,3 +1,4 @@
+import { addDays, diffDays } from "./dates";
 import type { CourseItem } from "./types";
 
 type Row = [course: string, title: string, type: CourseItem["type"], due: string, weight: number];
@@ -33,6 +34,19 @@ export const SAMPLE_ITEMS: CourseItem[] = ROWS.map(
     done: false,
   }),
 );
+
+/**
+ * The sample semester, moved forward in whole weeks if needed so that its first
+ * deadline is still ahead of `today`. Weekdays stay the same, so a Friday quiz is
+ * still a Friday quiz. Without this the sample would show overdue work whenever
+ * it is opened after its original dates.
+ */
+export function sampleItemsFrom(today: string): CourseItem[] {
+  const firstDue = ROWS.reduce((min, r) => (r[3] < min ? r[3] : min), ROWS[0][3]);
+  const weeks = Math.max(0, Math.ceil(diffDays(addDays(today, 1), firstDue) / 7));
+  if (weeks === 0) return SAMPLE_ITEMS;
+  return SAMPLE_ITEMS.map((i) => ({ ...i, dueDate: addDays(i.dueDate, weeks * 7) }));
+}
 
 /** A syllabus with a planted instruction, for testing the prompt-injection defences. */
 export const SAMPLE_INJECTION_TEXT = `ECON1101 Microeconomics - Semester 1, AY2026/27
