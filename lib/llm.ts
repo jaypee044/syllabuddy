@@ -111,18 +111,29 @@ async function viaGemini(o: GenerateOptions, apiKey: string, model: string, t?: 
   for (const t of o.textParts ?? []) parts.push({ text: t });
   parts.push({ text: `${o.instructions}\n\nReply with JSON only, in exactly this shape:\n${o.shapeHint}` });
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-    {
+  // Reading a syllabus doesn't need long "thinking", which is most of the wait on newer Flash models.
+  // Older models don't know the setting, so a 400 about it is retried once without it.
+  const call = (thinking: boolean) =>
+    fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify({
         contents: [{ role: "user", parts }],
-        generationConfig: { responseMimeType: "application/json", temperature: 0 },
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature: 0,
+          ...(thinking
+            ? { thinkingConfig: versionOf(model) >= 3 ? { thinkingLevel: "low" } : { thinkingBudget: 0 } }
+            : {}),
+        },
       }),
       signal: AbortSignal.timeout(TIMEOUT_MS),
-    },
-  );
+    });
+  let res = await call(true);
+  if (res.status === 400) {
+    const body = await res.clone().text();
+    if (/think/i.test(body)) res = await call(false);
+  }
   if (!res.ok) {
     const detail = (await res.text()).slice(0, 300);
     const message =

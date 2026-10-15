@@ -107,6 +107,14 @@ async function main() {
     );
   });
 
+  await test("a model that rejects the low-thinking setting is retried without it", async () => {
+    pretend((_m, n) => (n === 1 ? new Response("Unknown field thinkingConfig", { status: 400 }) : ok({ a: 7 })));
+    const { data, meta } = await generateJsonWithMeta(OPTS);
+    assert.deepEqual(data, { a: 7 });
+    assert.equal(meta.model, "gemini-3.8-flash");
+    assert.equal(generateCalls.length, 2);
+  });
+
   await test("a reply that isn't valid JSON is retried", async () => {
     pretend((_m, n) => (n === 1 ? text("Sure! Here you go: {oops") : ok({ a: 5 })));
     const { data, meta } = await generateJsonWithMeta(OPTS);
