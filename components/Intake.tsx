@@ -128,6 +128,7 @@ export default function Intake({ onExtracted, onLoadSample, hasItems }: Props) {
       {error && (
         <div className="alert" role="alert">
           {error}
+          {!hasItems && " You can also try the sample semester, which works without the AI."}
         </div>
       )}
     </div>

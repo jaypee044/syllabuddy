@@ -153,7 +153,7 @@ async function viaGemini(o: GenerateOptions, apiKey: string, model: string, t?: 
     const detail = (await res.text()).slice(0, 300);
     const message =
       res.status === 429 || res.status === 503
-        ? "The AI service is busy right now. Wait a few seconds and try again. The sample semester works without it."
+        ? "The AI service is busy right now. Wait a few seconds and try again."
         : res.status === 401 || res.status === 403
           ? "The AI key was rejected. Check GEMINI_API_KEY in .env.local and restart the server."
           : `Gemini returned ${res.status}: ${detail}`;
@@ -305,7 +305,7 @@ export async function generateJsonWithMeta(
   }
   if (isTimeout(last)) {
     throw new Error(
-      "The AI took too long to answer. Try again in a moment. The sample semester and your saved plan work without it.",
+      "The AI took too long to answer. Try again in a moment.",
     );
   }
   throw last instanceof Error ? last : new Error("The AI request failed.");
