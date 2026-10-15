@@ -84,14 +84,17 @@ async function main() {
     assert.equal(meta.fellBack, true);
   });
 
-  await test("a timeout is retried and then succeeds", async () => {
-    pretend((_m, n) => {
-      if (n === 1) throw Object.assign(new Error("The operation timed out"), { name: "TimeoutError" });
+  await test("when the main model stops answering (timeout), a backup model answers", async () => {
+    pretend((model) => {
+      if (model === "gemini-3.8-flash") {
+        throw Object.assign(new Error("The operation was aborted due to timeout"), { name: "TimeoutError" });
+      }
       return ok({ a: 4 });
     });
     const { data, meta } = await generateJsonWithMeta(OPTS);
     assert.deepEqual(data, { a: 4 });
-    assert.equal(meta.calls, 2);
+    assert.notEqual(meta.model, "gemini-3.8-flash");
+    assert.equal(meta.fellBack, true);
   });
 
   await test("if every attempt times out, the student gets a plain message", async () => {

@@ -13,7 +13,8 @@ const CLAUDE_MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5";
 // Google retires Gemini models over time. If you see a 404 "model is no longer
 // available", set GEMINI_MODEL in .env.local to the model name the error suggests.
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
-const TIMEOUT_MS = 40_000;
+// Short enough that a model that has stopped answering is skipped for a backup model.
+const TIMEOUT_MS = 22_000;
 const MAX_ATTEMPTS = 3;
 // Stop retrying once this much time has passed, so a request never outlives the route's time limit.
 const RETRY_BUDGET_MS = 40_000;
@@ -189,7 +190,7 @@ async function listGeminiModels(apiKey: string): Promise<string[]> {
 }
 
 const statusOf = (err: unknown) => (err as { status?: number }).status;
-const isCapacityError = (err: unknown) => [404, 429, 503].includes(statusOf(err) ?? 0);
+const isCapacityError = (err: unknown) => [404, 429, 503].includes(statusOf(err) ?? 0) || isTimeout(err);
 
 async function viaGeminiWithFallback(o: GenerateOptions, apiKey: string, t?: Trace): Promise<unknown> {
   try {
@@ -197,8 +198,10 @@ async function viaGeminiWithFallback(o: GenerateOptions, apiKey: string, t?: Tra
   } catch (first) {
     if (!isCapacityError(first)) throw first;
     let last: unknown = first;
+    const began = Date.now();
     const alternatives = (await listGeminiModels(apiKey)).filter((m) => m !== GEMINI_MODEL).slice(0, 3);
     for (const model of alternatives) {
+      if (Date.now() - began > 25_000) break; // don't outlive the route's time limit
       try {
         return await viaGemini(o, apiKey, model, t);
       } catch (err) {
