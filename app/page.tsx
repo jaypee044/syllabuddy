@@ -142,7 +142,11 @@ export default function Home() {
               <span className="n">2</span>
               <h2 id="s2">Check the deadlines</h2>
               <span className="hint">
-                {needsCheck > 0 ? `${needsCheck} to check` : "Everything looks right"}
+                {needsCheck > 0
+                  ? `${needsCheck} to check`
+                  : allWarnings.length > 0
+                    ? "Read the warnings below"
+                    : "Everything looks right"}
               </span>
               <button className="btn ghost small" onClick={() => setReviewOpen((o) => !o)} aria-expanded={reviewOpen}>
                 {reviewOpen ? "Hide" : "Review and edit"}
