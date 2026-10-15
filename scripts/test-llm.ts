@@ -115,6 +115,15 @@ async function main() {
     assert.equal(generateCalls.length, 2);
   });
 
+  await test("a model that is out of quota (429) is skipped on the next request", async () => {
+    pretend((model) => (model === "gemini-3.8-flash" ? status(429) : ok({ a: 8 })));
+    await generateJsonWithMeta(OPTS);
+    assert.equal(generateCalls[0], "gemini-3.8-flash");
+    generateCalls = [];
+    await generateJsonWithMeta(OPTS);
+    assert.ok(generateCalls.length > 0 && !generateCalls.includes("gemini-3.8-flash"));
+  });
+
   await test("a reply that isn't valid JSON is retried", async () => {
     pretend((_m, n) => (n === 1 ? text("Sure! Here you go: {oops") : ok({ a: 5 })));
     const { data, meta } = await generateJsonWithMeta(OPTS);

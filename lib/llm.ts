@@ -186,6 +186,7 @@ let modelCache: string[] | null = null;
 /** For tests: forget the cached model list. */
 export function resetModelCache() {
   modelCache = null;
+  cooldown.clear();
 }
 
 const versionOf = (name: string) => Number(/gemini-(\d+(?:\.\d+)?)/.exec(name)?.[1] ?? 0);
@@ -218,25 +219,54 @@ async function listGeminiModels(apiKey: string): Promise<string[]> {
 const statusOf = (err: unknown) => (err as { status?: number }).status;
 const isCapacityError = (err: unknown) => [404, 429, 503].includes(statusOf(err) ?? 0) || isTimeout(err);
 
+// A model that just ran out of quota or was overloaded is skipped for a few minutes,
+// so the next request doesn't spend its time budget asking it again.
+const cooldown = new Map<string, number>();
+const isCooling = (model: string) => (cooldown.get(model) ?? 0) > Date.now();
+function cool(model: string, err: unknown) {
+  const minutes = statusOf(err) === 429 ? 5 : 2;
+  cooldown.set(model, Date.now() + minutes * 60_000);
+}
+
 async function viaGeminiWithFallback(o: GenerateOptions, apiKey: string, t?: Trace): Promise<unknown> {
-  try {
-    return await viaGemini(o, apiKey, GEMINI_MODEL, t);
-  } catch (first) {
-    if (!isCapacityError(first)) throw first;
-    let last: unknown = first;
-    const began = Date.now();
-    const alternatives = (await listGeminiModels(apiKey)).filter((m) => m !== GEMINI_MODEL).slice(0, 3);
-    for (const model of alternatives) {
-      if (Date.now() - began > 25_000) break; // don't outlive the route's time limit
-      try {
-        return await viaGemini(o, apiKey, model, t);
-      } catch (err) {
-        last = err;
-        if (!isCapacityError(err)) throw err;
-      }
+  const attempt = async (model: string) => {
+    try {
+      return await viaGemini(o, apiKey, model, t);
+    } catch (err) {
+      if (isCapacityError(err)) cool(model, err);
+      throw err;
     }
-    throw last;
+  };
+
+  let last: unknown;
+  let triedMain = false;
+  if (!isCooling(GEMINI_MODEL)) {
+    triedMain = true;
+    try {
+      return await attempt(GEMINI_MODEL);
+    } catch (first) {
+      if (!isCapacityError(first)) throw first;
+      last = first;
+    }
   }
+
+  const began = Date.now();
+  const alternatives = (await listGeminiModels(apiKey))
+    .filter((m) => m !== GEMINI_MODEL && !isCooling(m))
+    .slice(0, 3);
+  for (const model of alternatives) {
+    if (Date.now() - began > 25_000) break; // don't outlive the route's time limit
+    try {
+      return await attempt(model);
+    } catch (err) {
+      last = err;
+      if (!isCapacityError(err)) throw err;
+    }
+  }
+
+  // Everything is resting: ask the main model anyway rather than fail without trying.
+  if (!triedMain && alternatives.length === 0) return attempt(GEMINI_MODEL);
+  throw last ?? new Error("The AI service is busy right now. Wait a few seconds and try again.");
 }
 
 /** Auth and bad-request errors won't fix themselves; everything else might. */
