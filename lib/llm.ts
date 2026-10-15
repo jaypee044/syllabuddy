@@ -13,10 +13,10 @@ const CLAUDE_MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5";
 // Google retires Gemini models over time. If you see a 404 "model is no longer
 // available", set GEMINI_MODEL in .env.local to the model name the error suggests.
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
-const TIMEOUT_MS = 28_000;
+const TIMEOUT_MS = 40_000;
 const MAX_ATTEMPTS = 3;
 // Stop retrying once this much time has passed, so a request never outlives the route's time limit.
-const RETRY_BUDGET_MS = 35_000;
+const RETRY_BUDGET_MS = 40_000;
 
 export const NO_KEY_MESSAGE =
   "No API key is set. Add GEMINI_API_KEY (free) or ANTHROPIC_API_KEY to .env.local and restart the dev server.";
@@ -269,5 +269,16 @@ export async function generateJsonWithMeta(
       }
     }
   }
+  if (isTimeout(last)) {
+    throw new Error(
+      "The AI took too long to answer. Try again in a moment, or paste a shorter section of the syllabus. The sample semester works without the AI.",
+    );
+  }
   throw last instanceof Error ? last : new Error("The AI request failed.");
+}
+
+/** A request that ran out of time (the browser and Node word this differently). */
+function isTimeout(err: unknown): boolean {
+  const e = err as { name?: string; message?: string };
+  return e?.name === "TimeoutError" || e?.name === "AbortError" || /aborted due to timeout|timed? ?out/i.test(e?.message ?? "");
 }

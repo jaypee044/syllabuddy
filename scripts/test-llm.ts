@@ -94,6 +94,16 @@ async function main() {
     assert.equal(meta.calls, 2);
   });
 
+  await test("if every attempt times out, the student gets a plain message", async () => {
+    pretend(() => {
+      throw Object.assign(new Error("The operation was aborted due to timeout"), { name: "TimeoutError" });
+    });
+    await assert.rejects(
+      () => generateJsonWithMeta(OPTS),
+      (e: Error) => /took too long/i.test(e.message) && !/aborted/i.test(e.message),
+    );
+  });
+
   await test("a reply that isn't valid JSON is retried", async () => {
     pretend((_m, n) => (n === 1 ? text("Sure! Here you go: {oops") : ok({ a: 5 })));
     const { data, meta } = await generateJsonWithMeta(OPTS);
