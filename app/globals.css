@@ -57,7 +57,7 @@ textarea {
 }
 
 .wrap {
-  max-width: 1080px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 0 20px 80px;
 }
@@ -697,7 +697,7 @@ table.items td:nth-child(4){min-width:124px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
 /* ---------- breathing room ---------- */
-.wrap{max-width:980px;padding:0 24px 96px}
+.wrap{max-width:1180px;padding:0 24px 96px}
 .masthead{padding-bottom:20px}
 .masthead p{font-size:1.05rem}
 .step{margin-top:56px}
@@ -738,3 +738,16 @@ table.items td{padding:9px 6px}
 @media (max-width:480px){.dash-grid .tile:last-child{grid-column:1 / -1}}
 
 .readmeta{margin:0 0 14px;font-size:.85rem;color:var(--ink-soft)}
+
+/* review table: give the item column room so rows stay short */
+table.items { min-width: 960px; table-layout: fixed; }
+table.items th:nth-child(1) { width: 52px; }
+table.items th:nth-child(2) { width: 214px; }
+table.items th:nth-child(3) { width: auto; }
+table.items th:nth-child(4) { width: 140px; }
+table.items th:nth-child(5) { width: 150px; }
+table.items th:nth-child(6) { width: 74px; }
+table.items th:nth-child(7) { width: 84px; }
+table.items th:nth-child(8) { width: 96px; }
+table.items td.num input { width: 100%; }
+table.items td.num input { padding-left: 4px; padding-right: 2px; }
