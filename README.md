@@ -141,7 +141,7 @@ The syllabus a student uploads is untrusted, and the model can be wrong or be tr
 
 ### Testing done
 
-- **Unit tests** (`npm test`, no key needed) cover the planner, the safety checks (20), the plan-change validation (13), the evaluation scoring (9), the dashboard (6), PDF reading (6), **the AI client against a simulated service that is busy, retired, slow or confused (12)**, **the check-and-repair step (10)** and **the whole read, check and repair flow (4)**. They include a case where the model is assumed to have obeyed a planted instruction, plus fabricated quotes, wrong dates, a "fix" that is itself wrong, and oversized output. These use simulated model output.
+- **Unit tests** (`npm test`, no key needed) cover the planner, the safety checks (20), the plan-change validation (14), the evaluation scoring (9), the dashboard (6), PDF reading (6), **the AI client against a simulated service that is busy, retired, slow or confused (12)**, **the check-and-repair step (10)** and **the whole read, check and repair flow (4)**. They include a case where the model is assumed to have obeyed a planted instruction, plus fabricated quotes, wrong dates, a "fix" that is itself wrong, and oversized output. These use simulated model output.
 - **Evaluation on a real model** (`npm run eval`): six test syllabi with known answers, including a list, prose, week numbers, a numeric-date table and two attack syllabi. Run on 2026-10-05 with Gemini `gemini-3.8-flash`:
 
 | Measure | Result |

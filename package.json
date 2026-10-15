@@ -12,6 +12,7 @@
     "test:safety": "tsx scripts/test-safety.ts",
     "test:adjust": "tsx scripts/test-adjust.ts",
     "test:llm": "tsx scripts/test-llm.ts",
+    "ping": "tsx --env-file=.env.local scripts/ping-gemini.ts",
     "test:repair": "tsx scripts/test-repair.ts",
     "test:pipeline": "tsx scripts/test-pipeline.ts"
   },

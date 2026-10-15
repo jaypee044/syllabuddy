@@ -16,6 +16,17 @@ const ITEMS = SAMPLE_ITEMS;
 const midterm = ITEMS.find((i) => i.title === "Midterm Exam" && i.course.startsWith("CS"))!;
 
 console.log("Validating what the AI proposes");
+test("a time-off range that started before today is trimmed to start today", () => {
+  const v = validateAdjustments(
+    { adjustments: [{ kind: "availability", startDate: "2026-10-01", endDate: "2026-10-08", hoursPerDay: 0 }] },
+    ITEMS,
+    TODAY,
+  );
+  assert.equal(v.adjustments.length, 1);
+  const a = v.adjustments[0];
+  assert.ok(a.kind === "availability" && a.startDate === TODAY && a.endDate === "2026-10-08");
+});
+
 test("keeps well-formed adjustments", () => {
   const v = validateAdjustments(
     {

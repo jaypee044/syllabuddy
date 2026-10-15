@@ -59,6 +59,8 @@ export function validateAdjustments(
           warnings.push("Ignored a change that is entirely in the past.");
           break;
         }
+        // A range that already started can only affect days from today on.
+        if (s < today) s = today;
         if (diffDays(e, s) + 1 > MAX_RANGE_DAYS) {
           warnings.push("Ignored a change that covers more than four months. Try a shorter range.");
           break;

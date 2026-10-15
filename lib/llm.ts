@@ -305,7 +305,7 @@ export async function generateJsonWithMeta(
   }
   if (isTimeout(last)) {
     throw new Error(
-      "The AI took too long to answer. Try again in a moment, or paste a shorter section of the syllabus. The sample semester works without the AI.",
+      "The AI took too long to answer. Try again in a moment. The sample semester and your saved plan work without it.",
     );
   }
   throw last instanceof Error ? last : new Error("The AI request failed.");

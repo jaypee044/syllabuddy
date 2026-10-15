@@ -47,7 +47,7 @@ function instructions(today: string) {
   return `Today is ${weekday} ${today}. Weeks start on Monday. A student has a study plan and describes a change in their situation. Turn it into adjustments.
 
 Adjustment kinds:
-- availability: the student has less time on some days. Give startDate, endDate (inclusive) and hoursPerDay (0 if they cannot study at all, otherwise the most hours they can manage). Resolve phrases like "next week" or "Thursday to Sunday" to real dates relative to today.
+- availability: the student has less time on some days. Give startDate, endDate (inclusive) and hoursPerDay (0 if they cannot study at all, otherwise the most hours they can manage). Resolve phrases like "next week" or "Thursday to Sunday" to real dates relative to today. A weekday name means its next upcoming occurrence (today counts only if it is that weekday), never a day that has already passed, even if it falls in the current Monday-to-Sunday week.
 - mark_done: the student says they already finished an item. Give its itemId.
 - move_deadline: the student says an item's deadline changed (extension, rescheduled exam). Give its itemId and newDate.
 - set_hours: the student says an item needs more or less study time than planned. Give its itemId and the total hours.
