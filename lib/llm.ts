@@ -72,6 +72,21 @@ interface Trace {
   provider: "gemini" | "claude";
   model: string;
   calls: number;
+  /** When the whole request must be finished, so it never outlives the route's time limit. */
+  deadline?: number;
+}
+
+/** Time allowed for one AI request in total, retries and backup models included. */
+const TOTAL_BUDGET_MS = 45_000;
+
+/** How long one call may take: the usual limit, or whatever is left of the total budget. */
+function callTimeout(t?: Trace): number {
+  if (!t?.deadline) return TIMEOUT_MS;
+  const left = t.deadline - Date.now();
+  if (left < 4_000) {
+    throw Object.assign(new Error("Out of time"), { name: "TimeoutError" });
+  }
+  return Math.min(TIMEOUT_MS, left);
 }
 
 async function viaClaude(o: GenerateOptions, apiKey: string, t?: Trace): Promise<unknown> {
@@ -94,7 +109,7 @@ async function viaClaude(o: GenerateOptions, apiKey: string, t?: Trace): Promise
       tool_choice: { type: "tool", name: o.toolName },
       messages: [{ role: "user", content }],
     },
-    { timeout: TIMEOUT_MS },
+    { timeout: callTimeout(t) },
   );
 
   const toolUse = message.content.find(
@@ -127,7 +142,7 @@ async function viaGemini(o: GenerateOptions, apiKey: string, model: string, t?: 
             : {}),
         },
       }),
-      signal: AbortSignal.timeout(TIMEOUT_MS),
+      signal: AbortSignal.timeout(callTimeout(t)),
     });
   let res = await call(true);
   if (res.status === 400) {
@@ -255,7 +270,12 @@ export async function generateJsonWithMeta(
 
   let last: unknown;
   const startedAt = Date.now();
-  const trace: Trace = { provider: k.anthropic ? "claude" : "gemini", model: "", calls: 0 };
+  const trace: Trace = {
+    provider: k.anthropic ? "claude" : "gemini",
+    model: "",
+    calls: 0,
+    deadline: startedAt + TOTAL_BUDGET_MS,
+  };
   for (let p = 0; p < providers.length; p++) {
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       try {
