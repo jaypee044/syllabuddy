@@ -22,10 +22,10 @@ import { diffDays, parseISO } from "../lib/dates";
   // Later, it moves forward by whole weeks, keeping weekdays, with nothing overdue.
   for (const today of ["2026-10-15", "2026-11-20", "2027-03-02"]) {
     const items = sampleItemsFrom(today);
-    assert.ok(items.every((i) => diffDays(i.dueDate, today) >= 1), `nothing overdue on ${today}`);
+    assert.ok(items.every((i) => diffDays(i.dueDate, today) >= 0), `nothing overdue on ${today}`);
     items.forEach((i, k) => {
       assert.equal(parseISO(i.dueDate).getUTCDay(), parseISO(SAMPLE_ITEMS[k].dueDate).getUTCDay());
     });
   }
-  console.log("  ok  the sample semester always starts ahead of today");
+  console.log("  ok  the sample semester never has anything overdue");
 }

@@ -43,7 +43,7 @@ export const SAMPLE_ITEMS: CourseItem[] = ROWS.map(
  */
 export function sampleItemsFrom(today: string): CourseItem[] {
   const firstDue = ROWS.reduce((min, r) => (r[3] < min ? r[3] : min), ROWS[0][3]);
-  const weeks = Math.max(0, Math.ceil(diffDays(addDays(today, 1), firstDue) / 7));
+  const weeks = Math.max(0, Math.ceil(diffDays(today, firstDue) / 7));
   if (weeks === 0) return SAMPLE_ITEMS;
   return SAMPLE_ITEMS.map((i) => ({ ...i, dueDate: addDays(i.dueDate, weeks * 7) }));
 }
