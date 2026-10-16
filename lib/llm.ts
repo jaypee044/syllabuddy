@@ -53,6 +53,8 @@ export interface GenerateOptions {
   toolName: string;
   toolDescription: string;
   schema: Anthropic.Messages.Tool["input_schema"];
+  /** If the model answers with a bare list, wrap it under this key (e.g. "items"). */
+  arrayKey?: string;
   /** Plain-text description of the JSON shape, used by the Gemini path. */
   shapeHint: string;
 }
@@ -310,7 +312,10 @@ export async function generateJsonWithMeta(
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       try {
         trace.calls++;
-        const out = await providers[p](trace);
+        let out = await providers[p](trace);
+        // Some models answer with the bare list of items instead of {"items": [...]}.
+        // The list is wrapped here; every item still goes through the normal safety checks.
+        if (Array.isArray(out) && o.arrayKey) out = { [o.arrayKey]: out };
         if (!out || typeof out !== "object" || Array.isArray(out)) {
           throw new Error("The AI returned data in the wrong shape.");
         }

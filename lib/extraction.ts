@@ -80,6 +80,7 @@ export async function extractFromSyllabusWithMeta(
     toolName: "record_syllabus_items",
     toolDescription: "Record every dated, assessed or required item found in the course syllabus.",
     schema: SCHEMA,
+    arrayKey: "items",
     shapeHint: SHAPE,
   });
   return { raw: data as RawResult, meta };

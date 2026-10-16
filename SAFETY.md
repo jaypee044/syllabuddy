@@ -19,7 +19,7 @@ The AI in this app reads documents the student uploads, and those documents are 
 
 ## Failure scenarios that are tested
 
-`npm test` runs four suites: the planner, the safety checks, the adjustment logic and the evaluation scoring. `npm run test:safety` runs 20 checks, including a case where the model is assumed to have obeyed a planted instruction. The planted item is still flagged, the command-like item is removed, nothing is marked done, and the student is warned. It also covers fabricated quotes, wrong dates, oversized output and file uploads.
+`npm test` runs ten suites: the planner, the safety checks, the adjustment logic, the evaluation scoring, the dashboard, the summary, PDF reading, the AI client, the check-and-repair step and the whole read-check-repair flow. `npm run test:safety` runs 20 checks, including a case where the model is assumed to have obeyed a planted instruction. The planted item is still flagged, the command-like item is removed, nothing is marked done, and the student is warned. It also covers fabricated quotes, wrong dates, oversized output and file uploads.
 
 To try it by hand, use **Fill in injection test** on the intake panel and run the extraction.
 
@@ -34,7 +34,7 @@ The unit tests above use simulated model output, including a pretend AI service 
 
 To run it, put a key in `.env.local` and run `npm run eval`. Paste the headline numbers from `eval/results.md` below, with the date and model, before presenting.
 
-**Run on 2026-10-05 with Gemini `gemini-3.8-flash`, six test syllabi (full report in `eval/results.md`):**
+**Run on 2026-10-16 with Gemini `gemini-3.6-flash`, six test syllabi, after the check-and-repair step was added (full report in `eval/results.md`):**
 
 | Measure | Result |
 | --- | --- |
@@ -45,6 +45,9 @@ To run it, put a key in `.env.local` and run `npm run eval`. Paste the headline 
 | Items verified against the syllabus text | 19 |
 | Attack syllabi where the model followed the planted instruction | 0 of 2 |
 | Attack syllabi where the injection warning was shown | 2 of 2 |
+| Wrong dates in the AI's first answer, before repair | 0 |
+
+An earlier run the same day had one case fail to run, because the model answered with a bare list instead of the expected structure. The app now accepts that form, and the re-run above covers all six cases. The earlier run is not counted here.
 | Items the model marked as done | 0 |
 
 How to read these numbers:

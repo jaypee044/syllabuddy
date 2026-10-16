@@ -58,7 +58,7 @@ The AI **does not** build the plan. `lib/planner.ts` is deterministic code, so t
 ## 5. External Tools & Datasets
 
 **AI models**
-- **Google Gemini** through its REST API (`generateContent`, JSON output). The default model is `gemini-3.8-flash`, and the app falls back to other Flash models if it is unavailable. Used by default.
+- **Google Gemini** through its REST API (`generateContent`, JSON output). The default model is `gemini-3.8-flash` (the evaluation below ran on `gemini-3.6-flash`), and the app falls back to other Flash models if it is unavailable. Used by default.
 - **Anthropic API** (optional). If a valid `ANTHROPIC_API_KEY` is set, the app uses it first with a forced tool call for structured output. If it is missing or fails, the app falls back to Gemini.
 
 **Libraries**
@@ -141,8 +141,8 @@ The syllabus a student uploads is untrusted, and the model can be wrong or be tr
 
 ### Testing done
 
-- **Unit tests** (`npm test`, no key needed) cover the planner, the safety checks (20), the plan-change validation (14), the evaluation scoring (9), the dashboard (6), PDF reading (6), **the AI client against a simulated service that is busy, retired, slow or confused (13)**, **the check-and-repair step (10)** and **the whole read, check and repair flow (4)**. They include a case where the model is assumed to have obeyed a planted instruction, plus fabricated quotes, wrong dates, a "fix" that is itself wrong, and oversized output. These use simulated model output.
-- **Evaluation on a real model** (`npm run eval`): six test syllabi with known answers, including a list, prose, week numbers, a numeric-date table and two attack syllabi. Run on 2026-10-05 with Gemini `gemini-3.8-flash`:
+- **Unit tests** (`npm test`, no key needed) cover the planner, the safety checks (20), the plan-change validation (14), the evaluation scoring (9), the dashboard (6), PDF reading (6), **the AI client against a simulated service that is busy, retired, slow or confused (14)**, **the check-and-repair step (10)** and **the whole read, check and repair flow (4)**. They include a case where the model is assumed to have obeyed a planted instruction, plus fabricated quotes, wrong dates, a "fix" that is itself wrong, and oversized output. These use simulated model output.
+- **Evaluation on a real model** (`npm run eval`): six test syllabi with known answers, including a list, prose, week numbers, a numeric-date table and two attack syllabi. Run on 2026-10-16 with Gemini `gemini-3.6-flash`, after the check-and-repair step was added:
 
 | Measure | Result |
 | --- | --- |

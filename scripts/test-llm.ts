@@ -154,6 +154,12 @@ async function main() {
     await assert.rejects(generateJsonWithMeta(OPTS), /wrong shape/i);
   });
 
+  await test("a bare list is wrapped when the caller names a key for it", async () => {
+    pretend(() => ok([{ title: "Essay" }]));
+    const { data } = await generateJsonWithMeta({ ...OPTS, arrayKey: "items" });
+    assert.deepEqual(data, { items: [{ title: "Essay" }] });
+  });
+
   await test("an empty reply is retried, not accepted", async () => {
     pretend((_m, n) =>
       n === 1 ? new Response(JSON.stringify({ candidates: [] }), { status: 200 }) : ok({ a: 7 }),
