@@ -4,6 +4,8 @@ Upload your syllabi. Syllabuddy finds every deadline, you check them, and you ge
 
 Built for the AI Lodge hackathon, track: **Productivity and workflows**.
 
+**Live demo:** https://syllabuddy-snowy.vercel.app (the sample semester works without the AI; reading a syllabus uses a free-tier Gemini key, so speed and availability can vary).
+
 ## 1. Problem Statement
 
 **The problem.** At the start of a semester, a student gets one syllabus per course, and each is written differently: a list, a paragraph, a table, a PDF, a photo of a slide. The deadlines are scattered across them. Nobody adds them up, so the week where three assignments and an exam collide only becomes obvious when it is already on top of them.
