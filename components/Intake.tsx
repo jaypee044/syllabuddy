@@ -31,6 +31,14 @@ export default function Intake({ onExtracted, onLoadSample, hasItems }: Props) {
       const res = await fetch("/api/extract", { method: "POST", body: form });
       const data = (await res.json()) as ExtractResponse & { error?: string };
       if (!res.ok) throw new Error(data.error || "Extraction failed.");
+      if (data.items.length === 0) {
+        // Nothing usable came back: say so, keep what the student already has, and keep their text.
+        const extra = (data.warnings ?? []).filter((w) => !/no dated items/i.test(w));
+        setError(
+          ["No deadlines were found. Paste the part of the syllabus that lists assessments with dates.", ...extra].join(" "),
+        );
+        return;
+      }
       onExtracted(data.items, data.warnings, hasItems && replace, data.meta);
       setFile(null);
       setText("");
