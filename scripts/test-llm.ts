@@ -143,6 +143,19 @@ async function main() {
     assert.equal(generateCalls.length, 1);
   });
 
+  await test("when quota is out and a retired model is among the backups, the student is told it is busy, not about the retired model", async () => {
+    pretend((model) => (model === "gemini-3.7-flash" ? status(404) : status(429)));
+    await assert.rejects(generateJsonWithMeta(OPTS), (e: Error) => /busy right now/i.test(e.message) && !/no longer available/i.test(e.message));
+  });
+
+  await test("a retired model is not asked again on the next request", async () => {
+    pretend((model) => (model === "gemini-3.8-flash" ? status(404) : ok({ a: 1 })));
+    await generateJsonWithMeta(OPTS);
+    pretend(() => ok({ a: 2 }));
+    await generateJsonWithMeta(OPTS);
+    assert.ok(!generateCalls.includes("gemini-3.8-flash"), `asked: ${generateCalls.join(", ")}`);
+  });
+
   await test("when every model is busy, it gives up after a few tries with a friendly message", async () => {
     pretend(() => status(503));
     await assert.rejects(generateJsonWithMeta(OPTS), /busy right now/i);

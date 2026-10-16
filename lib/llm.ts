@@ -156,7 +156,9 @@ async function viaGemini(o: GenerateOptions, apiKey: string, model: string, t?: 
     const message =
       res.status === 429 || res.status === 503
         ? "The AI service is busy right now. Wait a few seconds and try again."
-        : res.status === 401 || res.status === 403
+        : res.status === 404
+          ? "That AI model is no longer available. Set GEMINI_MODEL to a current Flash model."
+          : res.status === 401 || res.status === 403
           ? "The AI key was rejected. Check GEMINI_API_KEY in .env.local and restart the server."
           : `Gemini returned ${res.status}: ${detail}`;
     const err = new Error(message);
@@ -226,7 +228,7 @@ const isCapacityError = (err: unknown) => [404, 429, 503].includes(statusOf(err)
 const cooldown = new Map<string, number>();
 const isCooling = (model: string) => (cooldown.get(model) ?? 0) > Date.now();
 function cool(model: string, err: unknown) {
-  const minutes = statusOf(err) === 429 ? 5 : 2;
+  const minutes = statusOf(err) === 404 ? 60 : statusOf(err) === 429 ? 5 : 2;
   cooldown.set(model, Date.now() + minutes * 60_000);
 }
 
@@ -241,6 +243,7 @@ async function viaGeminiWithFallback(o: GenerateOptions, apiKey: string, t?: Tra
   };
 
   let last: unknown;
+  const failures: unknown[] = [];
   let triedMain = false;
   if (!isCooling(GEMINI_MODEL)) {
     triedMain = true;
@@ -249,6 +252,7 @@ async function viaGeminiWithFallback(o: GenerateOptions, apiKey: string, t?: Tra
     } catch (first) {
       if (!isCapacityError(first)) throw first;
       last = first;
+      failures.push(first);
     }
   }
 
@@ -262,13 +266,17 @@ async function viaGeminiWithFallback(o: GenerateOptions, apiKey: string, t?: Tra
       return await attempt(model);
     } catch (err) {
       last = err;
+      failures.push(err);
       if (!isCapacityError(err)) throw err;
     }
   }
 
   // Everything is resting: ask the main model anyway rather than fail without trying.
   if (!triedMain && alternatives.length === 0) return attempt(GEMINI_MODEL);
-  throw last ?? new Error("The AI service is busy right now. Wait a few seconds and try again.");
+  // A retired model (404) says nothing about whether the service is busy. If anything else
+  // failed too (quota, overload, timeout), report that one instead of the 404.
+  const informative = failures.find((e) => statusOf(e) !== 404);
+  throw informative ?? last ?? new Error("The AI service is busy right now. Wait a few seconds and try again.");
 }
 
 /** Auth and bad-request errors won't fix themselves; everything else might. */
