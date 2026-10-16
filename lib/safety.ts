@@ -311,7 +311,7 @@ export function processExtraction(
   }
   const flagged = items.filter((i) => i.verify?.length).length;
   if (flagged > 0) {
-    warnings.push(`${flagged} item${flagged === 1 ? " needs" : "s need"} a closer look. They're marked in the table.`);
+    warnings.push(`${flagged} item${flagged === 1 ? " needs" : "s need"} a closer look. ${flagged === 1 ? "It's" : "They're"} marked in the table.`);
   }
   if (items.length === 0 && removed === 0) warnings.push("No dated items were found in that syllabus.");
 
