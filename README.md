@@ -177,5 +177,4 @@ lib/            planner, safety checks, AI client, extraction prompt, calendar e
 eval/           test syllabi, scoring, and the latest results
 scripts/        tests and the evaluation runner
 SAFETY.md       full risk table and measured results
-DEMO.md         three-minute demo script
 ```
