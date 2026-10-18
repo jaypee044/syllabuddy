@@ -1,7 +1,7 @@
 "use client";
 
 import { buildDashboard, inDaysLabel } from "@/lib/dashboard";
-import { formatShort, todayISO } from "@/lib/dates";
+import { todayISO } from "@/lib/dates";
 import type { CourseItem, Plan } from "@/lib/types";
 
 interface Props {

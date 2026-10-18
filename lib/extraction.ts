@@ -85,7 +85,3 @@ export async function extractFromSyllabusWithMeta(
   });
   return { raw: data as RawResult, meta };
 }
-
-export async function extractFromSyllabus(input: ExtractionInput): Promise<RawResult> {
-  return (await extractFromSyllabusWithMeta(input)).raw;
-}
