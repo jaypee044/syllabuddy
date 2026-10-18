@@ -177,4 +177,5 @@ lib/            planner, safety checks, AI client, extraction prompt, calendar e
 eval/           test syllabi, scoring, and the latest results
 scripts/        tests and the evaluation runner
 SAFETY.md       full risk table and measured results
+ARCHITECTURE.md a one-page guide to how the code fits together
 ```
